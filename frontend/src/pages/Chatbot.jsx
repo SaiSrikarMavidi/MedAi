@@ -1,300 +1,344 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Paperclip, Image as ImageIcon, FileText, X, Bot, User as UserIcon, AlertCircle } from 'lucide-react';
-import Button from '../components/ui/Button';
+import { useState } from 'react';
+import {
+  Bot,
+  Lock,
+  MoreVertical,
+  PlusCircle,
+  Paperclip,
+  Image,
+  Send,
+  CheckCircle,
+  Activity,
+  AlertTriangle,
+  RotateCw,
+  Frown,
+  Droplets,
+  CalendarClock,
+} from 'lucide-react';
+import ChatLayout from '../components/ChatLayout';
 
-const Chatbot = () => {
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            type: 'bot',
-            content: 'Hello! I\'m your AI health assistant. How can I help you today? You can describe your symptoms or upload medical images/reports.',
-            timestamp: new Date()
-        }
-    ]);
-    const [inputMessage, setInputMessage] = useState('');
-    const [uploadedFiles, setUploadedFiles] = useState([]);
-    const [isTyping, setIsTyping] = useState(false);
-    const messagesEndRef = useRef(null);
-    const fileInputRef = useRef(null);
+// Mock chat messages
+const INITIAL_MESSAGES = [
+  {
+    id: 1,
+    type: 'user',
+    content: "I've had a persistent headache for 3 days and some dizziness. It seems to get worse when I stand up quickly.",
+    time: '10:24 AM',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHXThz0TzXFctWssJfz6q4dfXJG1wyfsD0WkNvXdFLKVDuLzDKcYs3gd8SHXMuQn3QJoLgL1Dsse7piSSaZizzllTmTyh_QEM43p07imUBaw2pouSY44WB89tnXgPhXwzJOE0uaCU3OBFsCBEGdNNXO4aLgAlh-n4WERA5UmJs_JmfNI3kSWz09h_oizQtP5cnkzBEWmEhhw0Oh16eiXyPtB9aRLQkBUIDiKweaaJ4Wx3Cta7p-iFSYK0uJFwWPeb_ausBmGVPvpY',
+  },
+  {
+    id: 2,
+    type: 'assistant',
+    content: null,
+    richContent: (
+      <>
+        <p className="text-base font-normal leading-relaxed">
+          I understand. Based on your description, I am logging these symptoms. The{' '}
+          <span className="font-bold text-primary">worsening upon standing</span> is a specific detail
+          known as orthostatic hypotension or positional dizziness.
+        </p>
+        <p className="text-base font-normal leading-relaxed mt-3">To help me analyze this further:</p>
+        <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-gray-300">
+          <li>Have you been drinking enough water lately?</li>
+          <li>Do you feel any nausea along with the dizziness?</li>
+        </ul>
+      </>
+    ),
+    time: '10:24 AM',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA94h3IYI8Q6uNTNr6IN9L_pCWz_bAHhfvSVPQxriTMoD3eLnp9OeQrxL3gAUa8QBcgccv4lImUm8UtfbtwsKKufpSaKMkzqMplzUxE_rwtk2kD11mD5WDj-b-8E6Fm7AnIt8cBBhQH31vsJri6dE9uw_OLS1zNINrlzG6bEbGoybuP9qk7B4LDLWGrCCvXyMTlbrNB5M_A4BPaRs5W_W7KPmw4BS1Crvhd5wJ6VRSQvjZP9n_T2_yMGtTox6ZHcWlL5cuulwrkMks',
+  },
+  {
+    id: 3,
+    type: 'system',
+    content: "Symptoms 'Headache' and 'Dizziness' logged to your profile.",
+  },
+  {
+    id: 4,
+    type: 'user',
+    content: "I haven't been drinking much water, no. And slightly nauseous this morning.",
+    time: '10:25 AM',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkv4vcFz8KDsmGpfU3pVy6ZJh5z997ZJYeCKNEIQxq99GBj3o1fNlIG-k7gCaYHsnt4tCkKMkSeFcQSFH-8QlGqPhPxvR6n7CAOLGytqvlwvWz8rFeVwXyv-tNlI-QDRfZiOWM_TZB-tQ_xbBy1-jK1PdQ1f4eWsFWyj2tPzJ26751JuMDcwrsp8menuQUoML5AmxqNfT1ezcYhHjAuhY1T5YJbNpAd_aV7iBm0uFkLKTN4MW2rNIyNNKEyBYyGtRE1g37wKgDIzg',
+  },
+];
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, isTyping]);
-
-    const handleFileUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const newFiles = files.map(file => ({
-            id: Date.now() + Math.random(),
-            file,
-            name: file.name,
-            type: file.type,
-            preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
-        }));
-        setUploadedFiles([...uploadedFiles, ...newFiles]);
-    };
-
-    const removeFile = (fileId) => {
-        setUploadedFiles(uploadedFiles.filter(f => f.id !== fileId));
-    };
-
-    const handleSendMessage = async () => {
-        if (!inputMessage.trim() && uploadedFiles.length === 0) return;
-
-        const newMessage = {
-            id: Date.now(),
-            type: 'user',
-            content: inputMessage,
-            files: uploadedFiles,
-            timestamp: new Date()
-        };
-
-        setMessages([...messages, newMessage]);
-        setInputMessage('');
-        setUploadedFiles([]);
-        setIsTyping(true);
-
-        // Simulate AI response
-        setTimeout(() => {
-            const aiResponse = {
-                id: Date.now() + 1,
-                type: 'bot',
-                content: 'Based on your symptoms, I\'m analyzing the information. This appears to be a common condition. Let me provide you with a detailed assessment and recommendations.',
-                analysis: {
-                    severity: 'moderate',
-                    recommendation: 'Online Consultation',
-                    summary: 'Your symptoms suggest a possible viral infection. I recommend consulting with a general physician.',
-                },
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiResponse]);
-            setIsTyping(false);
-        }, 2000);
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage();
-        }
-    };
-
-    return (
-        <div className="flex flex-col h-screen bg-neutral-50">
-            {/* Header */}
-            <div className="bg-white border-b border-neutral-200 px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                        <Bot className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h2 className="font-semibold text-neutral-900">AI Health Assistant</h2>
-                        <p className="text-sm text-neutral-600">Always here to help</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin">
-                <div className="max-w-4xl mx-auto space-y-6">
-                    <AnimatePresence>
-                        {messages.map((message) => (
-                            <motion.div
-                                key={message.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.3 }}
-                                className={`flex gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                            >
-                                {/* Avatar */}
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${message.type === 'bot' ? 'bg-primary-100' : 'bg-neutral-200'
-                                    }`}>
-                                    {message.type === 'bot' ? (
-                                        <Bot className="w-5 h-5 text-primary-600" />
-                                    ) : (
-                                        <UserIcon className="w-5 h-5 text-neutral-600" />
-                                    )}
-                                </div>
-
-                                {/* Message Content */}
-                                <div className={`flex-1 max-w-2xl ${message.type === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
-                                    <div className={`rounded-2xl px-4 py-3 ${message.type === 'bot'
-                                            ? 'bg-white border border-neutral-200'
-                                            : 'bg-primary-600 text-white'
-                                        }`}>
-                                        <p className="text-sm leading-relaxed">{message.content}</p>
-
-                                        {/* Display uploaded files */}
-                                        {message.files && message.files.length > 0 && (
-                                            <div className="mt-3 space-y-2">
-                                                {message.files.map(file => (
-                                                    <div key={file.id} className="flex items-center gap-2 bg-neutral-100 rounded-lg p-2">
-                                                        {file.preview ? (
-                                                            <img src={file.preview} alt={file.name} className="w-16 h-16 object-cover rounded" />
-                                                        ) : (
-                                                            <FileText className="w-8 h-8 text-neutral-400" />
-                                                        )}
-                                                        <span className="text-xs text-neutral-700">{file.name}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {/* AI Analysis Card */}
-                                        {message.analysis && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                className="mt-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200"
-                                            >
-                                                <h4 className="font-semibold text-neutral-900 mb-2 flex items-center gap-2">
-                                                    <AlertCircle className="w-4 h-4" />
-                                                    Health Analysis
-                                                </h4>
-                                                <div className="space-y-2 text-sm text-neutral-700">
-                                                    <div className="flex justify-between">
-                                                        <span className="font-medium">Severity:</span>
-                                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${message.analysis.severity === 'low' ? 'bg-green-100 text-green-700' :
-                                                                message.analysis.severity === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
-                                                                    'bg-red-100 text-red-700'
-                                                            }`}>
-                                                            {message.analysis.severity}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="font-medium">Recommendation:</span>
-                                                        <span className="text-primary-600 font-medium">{message.analysis.recommendation}</span>
-                                                    </div>
-                                                    <p className="pt-2 border-t border-neutral-200">{message.analysis.summary}</p>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </div>
-                                    <span className="text-xs text-neutral-500 mt-1 px-2">
-                                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-
-                    {/* Typing Indicator */}
-                    {isTyping && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex gap-3"
-                        >
-                            <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                                <Bot className="w-5 h-5 text-primary-600" />
-                            </div>
-                            <div className="bg-white border border-neutral-200 rounded-2xl px-4 py-3">
-                                <div className="flex gap-1">
-                                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    <div ref={messagesEndRef} />
-                </div>
-            </div>
-
-            {/* Input Area */}
-            <div className="bg-white border-t border-neutral-200 px-6 py-4">
-                <div className="max-w-4xl mx-auto">
-                    {/* File Preview */}
-                    {uploadedFiles.length > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            className="mb-3 flex gap-2 flex-wrap"
-                        >
-                            {uploadedFiles.map(file => (
-                                <div key={file.id} className="relative group">
-                                    {file.preview ? (
-                                        <div className="relative">
-                                            <img src={file.preview} alt={file.name} className="w-20 h-20 object-cover rounded-lg border border-neutral-200" />
-                                            <button
-                                                onClick={() => removeFile(file.id)}
-                                                className="absolute -top-2 -right-2 w-6 h-6 bg-error text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="relative flex items-center gap-2 bg-neutral-100 rounded-lg px-3 py-2 pr-8">
-                                            <FileText className="w-5 h-5 text-neutral-400" />
-                                            <span className="text-sm text-neutral-700 max-w-[100px] truncate">{file.name}</span>
-                                            <button
-                                                onClick={() => removeFile(file.id)}
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 bg-error text-white rounded-full flex items-center justify-center"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </motion.div>
-                    )}
-
-                    {/* Input Box */}
-                    <div className="flex gap-2 items-end">
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            accept="image/*,.pdf"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                        />
-
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-neutral-300 hover:border-primary-500 hover:bg-primary-50 transition-all"
-                        >
-                            <Paperclip className="w-5 h-5 text-neutral-600" />
-                        </button>
-
-                        <div className="flex-1 relative">
-                            <textarea
-                                value={inputMessage}
-                                onChange={(e) => setInputMessage(e.target.value)}
-                                onKeyPress={handleKeyPress}
-                                placeholder="Describe your symptoms or health concerns..."
-                                rows={1}
-                                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all"
-                                style={{ minHeight: '44px', maxHeight: '120px' }}
-                            />
-                        </div>
-
-                        <Button
-                            variant="primary"
-                            size="md"
-                            onClick={handleSendMessage}
-                            disabled={!inputMessage.trim() && uploadedFiles.length === 0}
-                            icon={<Send className="w-5 h-5" />}
-                            className="h-11"
-                        >
-                            Send
-                        </Button>
-                    </div>
-
-                    <p className="text-xs text-neutral-500 text-center mt-2">
-                        MediAI provides health guidance only. For emergencies, call your local emergency services.
-                    </p>
-                </div>
-            </div>
+function ChatHeader() {
+  return (
+    <header className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-sidebar-border bg-sidebar/95 backdrop-blur z-10">
+      <div className="flex items-center gap-4 text-white">
+        <div className="w-8 h-8 text-primary flex items-center justify-center bg-primary/10 rounded-lg">
+          <Bot className="w-5 h-5" />
         </div>
-    );
-};
+        <div>
+          <h2 className="text-white text-lg font-bold leading-tight">AI Health Chatbot</h2>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs text-muted font-medium">Active Session</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
+          <Lock className="w-4 h-4 text-green-500" />
+          <span className="text-green-500 text-xs font-bold uppercase tracking-wide">HIPAA Secure</span>
+        </div>
+        <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-sidebar-hover text-white hover:bg-primary hover:text-white transition-colors">
+          <MoreVertical className="w-5 h-5" />
+        </button>
+      </div>
+    </header>
+  );
+}
 
-export default Chatbot;
+function MessageBubble({ message }) {
+  if (message.type === 'system') {
+    return (
+      <div className="flex justify-center my-2">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-sidebar-hover/50 border border-sidebar-border text-muted text-sm">
+          <CheckCircle className="w-4 h-4" />
+          <span>{message.content}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (message.type === 'user') {
+    return (
+      <div className="flex items-end gap-3 justify-end group">
+        <div className="flex flex-col gap-1 items-end max-w-[80%]">
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-muted text-xs">You</p>
+          </div>
+          <div className="rounded-2xl rounded-tr-none px-5 py-4 bg-primary text-white shadow-md">
+            <p className="text-base font-medium leading-relaxed">{message.content}</p>
+          </div>
+          <p className="text-muted text-[11px] opacity-0 group-hover:opacity-100 transition-opacity">
+            {message.time}
+          </p>
+        </div>
+        <div
+          className="w-10 h-10 rounded-full shrink-0 border-2 border-sidebar-border bg-cover bg-center"
+          style={{ backgroundImage: `url('${message.avatar}')` }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-3 group">
+      <div
+        className="w-10 h-10 rounded-full shrink-0 border-2 border-primary/30 shadow-[0_0_15px_rgba(19,127,236,0.3)] bg-cover bg-center"
+        style={{ backgroundImage: `url('${message.avatar}')` }}
+      />
+      <div className="flex flex-col gap-1 items-start max-w-[80%]">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-muted text-xs">MediAI Assistant</p>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sidebar-hover text-muted">BOT</span>
+        </div>
+        <div className="rounded-2xl rounded-tl-none px-5 py-4 bg-sidebar-hover text-white shadow-sm border border-sidebar-border/50">
+          {message.richContent || <p className="text-base font-normal leading-relaxed">{message.content}</p>}
+        </div>
+        <p className="text-muted text-[11px] opacity-0 group-hover:opacity-100 transition-opacity">
+          {message.time}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className="w-8 h-8 rounded-full shrink-0 opacity-70 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDgL4ptd60y86EhIXQDCiZD9RpNBtBm396Q6hAhb1I-CHBSP5nOspjRXV0NFY74qVWIQax-G22iORHuid5cw07iQl_ohLWKZSM-TI3HnNBW4WDNZTSCVlvpO9Uh5Us5LHA4KzRLEuYGdMFGeqCjQqDrWwBUN1pa3FtoC2VmgHz7JYniG2PeO3g6kAihTrMkQwL-PcM5tqoBB4MDYNcjn6Y-gLPKnmpM4Crr_769SZjOjYk2aoqRa2vkIpiohFxE0-Iaz9y1jLPma1A')",
+        }}
+      />
+      <div className="flex gap-1 px-3 py-2 bg-sidebar-hover rounded-xl">
+        <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" />
+        <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:75ms]" />
+        <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:150ms]" />
+      </div>
+    </div>
+  );
+}
+
+function ChatComposer() {
+  const [message, setMessage] = useState('');
+
+  return (
+    <footer className="p-6 pt-2 bg-sidebar flex-shrink-0">
+      <div className="relative flex w-full items-end rounded-xl bg-sidebar-hover border border-sidebar-border focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all shadow-lg">
+        <button className="p-3 text-muted hover:text-white transition-colors self-end mb-0.5">
+          <PlusCircle className="w-5 h-5" />
+        </button>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="flex-1 bg-transparent border-none text-white placeholder-muted focus:ring-0 resize-none py-4 max-h-32 min-h-[56px] focus:outline-none"
+          placeholder="Describe your symptoms or ask a question..."
+          rows={1}
+        />
+        <div className="flex items-center gap-2 pr-3 pb-3 self-end">
+          <button className="p-2 text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="Upload File">
+            <Paperclip className="w-5 h-5" />
+          </button>
+          <button className="p-2 text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="Upload Image">
+            <Image className="w-5 h-5" />
+          </button>
+          <button className="ml-2 flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all">
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+      <p className="text-center text-muted text-[10px] mt-2">
+        MediAI can make mistakes. Consider checking important information.
+      </p>
+    </footer>
+  );
+}
+
+function HealthInsightsPanel() {
+  return (
+    <aside className="w-[340px] flex-shrink-0 flex-col border-l border-sidebar-border bg-sidebar h-full overflow-y-auto hidden xl:flex">
+      <div className="p-6">
+        <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
+          <Activity className="w-5 h-5 text-primary" />
+          Health Insights
+        </h3>
+
+        {/* Health Status Widget */}
+        <div className="bg-[#1a2027] rounded-xl p-5 border border-sidebar-border mb-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-green-500/20" />
+          <h4 className="text-muted text-xs font-bold uppercase tracking-wider mb-2">Current Status</h4>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-green-500/20 border border-green-500/30 text-green-500">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-white text-xl font-bold">Stable</p>
+              <p className="text-green-400 text-xs font-medium">Low Risk Level</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted leading-normal">
+            Vitals estimated within normal range. Monitor hydration levels closely.
+          </p>
+        </div>
+
+        {/* Detected Symptoms */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-white text-sm font-bold">Detected Symptoms</h4>
+            <span className="text-xs text-primary cursor-pointer hover:underline">View History</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Headache (3 Days)
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-medium flex items-center gap-1">
+              <RotateCw className="w-3.5 h-3.5" />
+              Dizziness
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-sidebar-hover text-muted text-xs font-medium flex items-center gap-1">
+              <Frown className="w-3.5 h-3.5" />
+              Nausea
+            </span>
+          </div>
+        </div>
+
+        {/* Recommended Actions */}
+        <div className="mb-6">
+          <h4 className="text-white text-sm font-bold mb-3">Recommended Actions</h4>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3 p-3 rounded-lg bg-sidebar-hover/50 border border-sidebar-border hover:border-primary/50 transition-colors cursor-pointer group">
+              <div className="mt-0.5 text-blue-400 bg-blue-400/10 rounded p-1 h-fit">
+                <Droplets className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium group-hover:text-primary transition-colors">
+                  Hydrate Immediately
+                </p>
+                <p className="text-muted text-xs mt-0.5">Drink at least 500ml of water now.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 p-3 rounded-lg bg-sidebar-hover/50 border border-sidebar-border hover:border-primary/50 transition-colors cursor-pointer group">
+              <div className="mt-0.5 text-purple-400 bg-purple-400/10 rounded p-1 h-fit">
+                <CalendarClock className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-medium group-hover:text-primary transition-colors">
+                  Log Blood Pressure
+                </p>
+                <p className="text-muted text-xs mt-0.5">Check if available to rule out hypotension.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pain Trend Chart */}
+        <div>
+          <h4 className="text-white text-sm font-bold mb-3">Pain Trend</h4>
+          <div className="h-32 w-full rounded-xl bg-sidebar-hover border border-sidebar-border relative overflow-hidden flex items-end justify-between px-2 pb-2 pt-8">
+            <div className="w-1/6 bg-blue-500/20 h-[30%] rounded-t mx-0.5" />
+            <div className="w-1/6 bg-blue-500/30 h-[45%] rounded-t mx-0.5" />
+            <div className="w-1/6 bg-blue-500/40 h-[40%] rounded-t mx-0.5" />
+            <div className="w-1/6 bg-blue-500/60 h-[60%] rounded-t mx-0.5" />
+            <div className="w-1/6 bg-blue-500/80 h-[75%] rounded-t mx-0.5" />
+            <div className="w-1/6 bg-primary h-[85%] rounded-t mx-0.5 relative group">
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-neutral-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                8/10
+              </div>
+            </div>
+            <div className="absolute inset-0 border-t border-white/5 top-1/3 pointer-events-none" />
+            <div className="absolute inset-0 border-t border-white/5 top-2/3 pointer-events-none" />
+          </div>
+          <p className="text-right text-[10px] text-muted mt-1">Last 5 Days</p>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+export default function Chatbot() {
+  const [messages] = useState(INITIAL_MESSAGES);
+  const [isTyping] = useState(true);
+
+  return (
+    <ChatLayout>
+      <div className="flex-1 flex h-full overflow-hidden">
+        {/* Central Chat Area */}
+        <div className="flex-1 flex flex-col min-w-0 relative">
+          <ChatHeader />
+
+          {/* Chat History */}
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+            {/* Date Separator */}
+            <div className="flex justify-center">
+              <span className="px-3 py-1 rounded-full bg-sidebar-hover text-muted text-xs font-medium">
+                Today, 10:23 AM
+              </span>
+            </div>
+
+            {/* Messages */}
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} />
+            ))}
+
+            {/* Typing Indicator */}
+            {isTyping && <TypingIndicator />}
+
+            {/* Bottom spacer */}
+            <div className="h-4 w-full" />
+          </div>
+
+          <ChatComposer />
+        </div>
+
+        {/* Right Sidebar */}
+        <HealthInsightsPanel />
+      </div>
+    </ChatLayout>
+  );
+}

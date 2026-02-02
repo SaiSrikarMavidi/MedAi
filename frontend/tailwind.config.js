@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+    darkMode: "class",
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,18 +8,36 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Swiss design color palette - clean, minimal, high contrast
+                // MediAI design system
                 primary: {
-                    50: '#f0f9ff',
-                    100: '#e0f2fe',
-                    200: '#bae6fd',
-                    300: '#7dd3fc',
-                    400: '#38bdf8',
-                    500: '#0ea5e9',
-                    600: '#0284c7',
-                    700: '#0369a1',
-                    800: '#075985',
-                    900: '#0c4a6e',
+                    DEFAULT: '#137fec',
+                    50: '#f0f7ff',
+                    100: '#e0efff',
+                    200: '#bae0ff',
+                    300: '#7cc5ff',
+                    400: '#36a5ff',
+                    500: '#137fec',
+                    600: '#0066d6',
+                    700: '#0052ad',
+                    800: '#00458f',
+                    900: '#003a76',
+                },
+                background: {
+                    light: '#f6f7f8',
+                    dark: '#101922',
+                },
+                surface: {
+                    dark: '#1c2127',
+                    border: '#3b4754',
+                },
+                card: {
+                    dark: '#1b252f',
+                    hover: '#222e3a',
+                },
+                sidebar: {
+                    DEFAULT: '#111418',
+                    hover: '#283039',
+                    border: '#283039',
                 },
                 neutral: {
                     50: '#fafafa',
@@ -33,13 +52,15 @@ export default {
                     900: '#171717',
                     950: '#0a0a0a',
                 },
+                muted: '#9dabb9',
                 success: '#10b981',
                 warning: '#f59e0b',
                 error: '#ef4444',
                 info: '#3b82f6',
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                display: ['Manrope', 'system-ui', '-apple-system', 'sans-serif'],
+                sans: ['Manrope', 'system-ui', '-apple-system', 'sans-serif'],
                 mono: ['JetBrains Mono', 'Courier New', 'monospace'],
             },
             fontSize: {

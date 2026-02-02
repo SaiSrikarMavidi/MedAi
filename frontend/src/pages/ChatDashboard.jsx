@@ -1,174 +1,191 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, MessageSquare, Clock, ArrowRight, Search } from 'lucide-react';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, Calendar, PlusCircle, ArrowRight, Eye } from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
 
-const ChatDashboard = () => {
-    const [chatSessions, setChatSessions] = useState([
-        {
-            id: 1,
-            title: 'Headache and Fever',
-            lastMessage: 'Based on your symptoms, I recommend...',
-            timestamp: '2 hours ago',
-            unread: false
-        },
-        {
-            id: 2,
-            title: 'Skin Rash Consultation',
-            lastMessage: 'Please upload a clear image of the affected area',
-            timestamp: '1 day ago',
-            unread: true
-        },
-        {
-            id: 3,
-            title: 'Diabetes Management',
-            lastMessage: 'Your blood sugar levels are within normal range',
-            timestamp: '3 days ago',
-            unread: false
-        }
-    ]);
+// Mock consultation data
+const CONSULTATIONS = [
+  {
+    id: 1,
+    title: 'Headache & Nausea',
+    date: 'Oct 24, 2023 • 10:30 AM',
+    summary: 'AI suggests monitoring hydration levels. Initial assessment points towards a possible migraine trigger or mild...',
+    status: 'in-progress',
+  },
+  {
+    id: 2,
+    title: 'Annual Checkup Review',
+    date: 'Sept 10, 2023 • 2:15 PM',
+    summary: 'Blood pressure trends analyzed from uploaded documents. Cholesterol levels are within normal range. Exercise plan...',
+    status: 'completed',
+  },
+  {
+    id: 3,
+    title: 'Skin Rash Inquiry',
+    date: 'Aug 05, 2023 • 9:00 AM',
+    summary: 'Visual analysis of forearm rash suggests contact dermatitis. Dermatology referral recommended if symptoms persist for...',
+    status: 'completed',
+  },
+  {
+    id: 4,
+    title: 'Dietary Consultation',
+    date: 'July 12, 2023 • 4:45 PM',
+    summary: 'Meal plan generated focusing on low-sodium intake. Supplement recommendations provided for Vitamin D and...',
+    status: 'completed',
+  },
+];
 
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const filteredChats = chatSessions.filter(chat =>
-        chat.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const handleNewChat = () => {
-        // TODO: Navigate to new chat
-        console.log('Creating new chat...');
-    };
-
-    const handleChatClick = (chatId) => {
-        // TODO: Navigate to chat
-        console.log('Opening chat:', chatId);
-    };
-
+function StatusBadge({ status }) {
+  if (status === 'in-progress') {
     return (
-        <div className="min-h-screen bg-neutral-50">
-            {/* Header */}
-            <div className="bg-white border-b border-neutral-200">
-                <div className="container-swiss py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-semibold text-neutral-900 mb-1">Your Conversations</h1>
-                            <p className="text-neutral-600">Continue where you left off or start a new consultation</p>
-                        </div>
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            icon={<Plus className="w-5 h-5" />}
-                            onClick={handleNewChat}
-                        >
-                            New Chat
-                        </Button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <div className="container-swiss py-8">
-                {/* Search Bar */}
-                <div className="mb-6">
-                    <div className="relative max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                        <input
-                            type="text"
-                            placeholder="Search conversations..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                        />
-                    </div>
-                </div>
-
-                {/* Chat Sessions Grid */}
-                {filteredChats.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredChats.map((chat, index) => (
-                            <motion.div
-                                key={chat.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                            >
-                                <Card
-                                    hover
-                                    onClick={() => handleChatClick(chat.id)}
-                                    className="h-full"
-                                >
-                                    <div className="p-6">
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                                                    <MessageSquare className="w-5 h-5 text-primary-600" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-neutral-900">{chat.title}</h3>
-                                                    {chat.unread && (
-                                                        <span className="inline-block w-2 h-2 bg-primary-600 rounded-full"></span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <ArrowRight className="w-5 h-5 text-neutral-400 group-hover:text-primary-600 transition-colors" />
-                                        </div>
-
-                                        <p className="text-sm text-neutral-600 mb-3 line-clamp-2">
-                                            {chat.lastMessage}
-                                        </p>
-
-                                        <div className="flex items-center gap-1 text-xs text-neutral-500">
-                                            <Clock className="w-3 h-3" />
-                                            <span>{chat.timestamp}</span>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
-                ) : (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-12"
-                    >
-                        <MessageSquare className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-medium text-neutral-900 mb-2">No conversations found</h3>
-                        <p className="text-neutral-600 mb-6">Try adjusting your search or start a new chat</p>
-                        <Button variant="primary" icon={<Plus className="w-5 h-5" />} onClick={handleNewChat}>
-                            Start New Chat
-                        </Button>
-                    </motion.div>
-                )}
-
-                {/* Empty State for New Users */}
-                {chatSessions.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="max-w-2xl mx-auto text-center py-16"
-                    >
-                        <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <MessageSquare className="w-10 h-10 text-primary-600" />
-                        </div>
-                        <h2 className="text-3xl font-semibold text-neutral-900 mb-3">Welcome to MediAI</h2>
-                        <p className="text-lg text-neutral-600 mb-8">
-                            Start your first conversation with our AI health assistant. Describe your symptoms, upload medical images, and get intelligent health guidance.
-                        </p>
-                        <Button
-                            variant="primary"
-                            size="xl"
-                            icon={<Plus className="w-6 h-6" />}
-                            onClick={handleNewChat}
-                        >
-                            Start Your First Chat
-                        </Button>
-                    </motion.div>
-                )}
-            </div>
-        </div>
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 text-primary text-xs font-bold border border-primary/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        In-Progress
+      </span>
     );
-};
+  }
+  return (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
+      Completed
+    </span>
+  );
+}
 
-export default ChatDashboard;
+function ConsultationCard({ consultation }) {
+  const isInProgress = consultation.status === 'in-progress';
+
+  return (
+    <div className="flex flex-col p-5 rounded-xl bg-white dark:bg-card-dark border border-neutral-200 dark:border-sidebar-border hover:border-primary/50 transition-colors group cursor-pointer shadow-sm">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-neutral-900 dark:text-white text-lg font-bold leading-snug group-hover:text-primary transition-colors">
+            {consultation.title}
+          </h3>
+          <div className="flex items-center gap-2 text-neutral-500 dark:text-muted text-xs font-medium">
+            <Calendar className="w-4 h-4" />
+            <span>{consultation.date}</span>
+          </div>
+        </div>
+        <StatusBadge status={consultation.status} />
+      </div>
+
+      <p className="text-neutral-500 dark:text-muted text-sm leading-relaxed mb-6 line-clamp-2">
+        {consultation.summary}
+      </p>
+
+      <div className="mt-auto flex justify-end">
+        {isInProgress ? (
+          <button className="flex items-center gap-2 px-4 py-2 bg-neutral-900 dark:bg-sidebar-hover hover:bg-neutral-800 dark:hover:bg-card-hover text-white text-sm font-bold rounded-lg transition-colors border border-neutral-700 dark:border-sidebar-border">
+            <span>Resume Session</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button className="flex items-center gap-2 px-4 py-2 text-neutral-900 dark:text-white hover:text-primary dark:hover:text-primary text-sm font-bold transition-colors">
+            <span>View Summary</span>
+            <Eye className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function ChatDashboard() {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const filteredConsultations = CONSULTATIONS.filter((c) =>
+    c.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <DashboardLayout>
+      <div className="w-full px-6 py-8 md:px-10 lg:px-16 lg:py-10 max-w-[1200px] mx-auto flex flex-col gap-6">
+        {/* Greeting */}
+        <div className="flex flex-wrap justify-between items-end gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight">
+              {getGreeting()}, Sarah
+            </h1>
+            <p className="text-neutral-500 dark:text-muted text-base font-normal">
+              Manage your health conversations and insights.
+            </p>
+          </div>
+        </div>
+
+        {/* Hero CTA Section */}
+        <div className="w-full rounded-2xl overflow-hidden relative group">
+          {/* Background Image */}
+          <div
+            className="absolute inset-0 bg-cover bg-center z-0"
+            style={{
+              backgroundImage:
+                "url('https://lh3.googleusercontent.com/aida-public/AB6AXuA-274e2qMptEPc-7dsbpaEaP33JMXXxoh17-fSsOmNV-KOFf3TbhRgLrGOUwlXZb03CMcYB0i9HXkbzr9hW4mtXQ_l08Mzan0qQAlxdveengrCbHqj7LKW-3RPI803_r9ykqOsC_AZfv__CA1ns-cwf4_rpbAn24e1ivRz80vmeNdU9vQxDsV5xK0-ol5SAgXgAaWVzdk7lOaBl4mMUA5DOHQtcUKFW4Ibnyu1-s0Z9jXKpVAJWFsiX2aHVnRH-KFzqWZqE6lotjg')",
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background-dark via-background-dark/90 to-background-dark/40 z-0" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-6 py-10 md:px-10 md:py-12">
+            <div className="flex flex-col gap-3 max-w-xl">
+              <h2 className="text-white text-2xl md:text-3xl font-bold leading-tight tracking-tight">
+                How are you feeling today?
+              </h2>
+              <p className="text-blue-100 text-base font-medium leading-relaxed opacity-90">
+                Start a new session to get AI-powered health insights immediately based on your current symptoms.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <Link
+                to="/chat"
+                className="flex items-center gap-2 h-12 px-6 bg-primary hover:bg-blue-600 text-white text-base font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105 active:scale-95"
+              >
+                <PlusCircle className="w-5 h-5" />
+                <span>Start New Consultation</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Title */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-4">
+          <h2 className="text-[22px] font-bold leading-tight tracking-tight">Recent Consultations</h2>
+          <div className="w-full md:w-auto min-w-[320px]">
+            <label className="flex w-full items-center h-11 rounded-lg bg-white dark:bg-card-dark border border-neutral-200 dark:border-sidebar-border overflow-hidden focus-within:ring-2 ring-primary/50 transition-shadow">
+              <div className="pl-3 pr-2 text-muted flex items-center justify-center">
+                <Search className="w-5 h-5" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-full bg-transparent border-none text-sm font-medium placeholder:text-muted focus:ring-0 focus:outline-none p-0"
+                placeholder="Search by symptom or date..."
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Consultations Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
+          {filteredConsultations.map((consultation) => (
+            <ConsultationCard key={consultation.id} consultation={consultation} />
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredConsultations.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted text-lg">No consultations found matching "{searchQuery}"</p>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}

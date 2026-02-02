@@ -14,8 +14,9 @@ function App() {
     // TODO: Implement proper authentication check
     const isAuthenticated = true; // Set to true for development
 
-    const ProtectedRoute = ({ children }) => {
-        return isAuthenticated ? <MainLayout>{children}</MainLayout> : <Navigate to="/login" />;
+    const ProtectedRoute = ({ children, useMainLayout = true }) => {
+        if (!isAuthenticated) return <Navigate to="/login" />;
+        return useMainLayout ? <MainLayout>{children}</MainLayout> : children;
     };
 
     return (
@@ -28,23 +29,23 @@ function App() {
                 {/* Protected Routes */}
                 <Route
                     path="/dashboard"
-                    element={<ProtectedRoute><ChatDashboard /></ProtectedRoute>}
+                    element={<ProtectedRoute useMainLayout={false}><ChatDashboard /></ProtectedRoute>}
                 />
                 <Route
                     path="/chat/:chatId?"
-                    element={<ProtectedRoute><Chatbot /></ProtectedRoute>}
+                    element={<ProtectedRoute useMainLayout={false}><Chatbot /></ProtectedRoute>}
                 />
                 <Route
                     path="/doctors"
-                    element={<ProtectedRoute><DoctorConsultation /></ProtectedRoute>}
+                    element={<ProtectedRoute useMainLayout={false}><DoctorConsultation /></ProtectedRoute>}
                 />
                 <Route
                     path="/reminders"
-                    element={<ProtectedRoute><MedicineReminder /></ProtectedRoute>}
+                    element={<ProtectedRoute useMainLayout={false}><MedicineReminder /></ProtectedRoute>}
                 />
                 <Route
                     path="/food"
-                    element={<ProtectedRoute><FoodAdvisor /></ProtectedRoute>}
+                    element={<ProtectedRoute useMainLayout={false}><FoodAdvisor /></ProtectedRoute>}
                 />
                 <Route
                     path="/tracking"
