@@ -6,7 +6,7 @@ export default function DashboardLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark font-display text-neutral-900 dark:text-white">
+    <div className="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-background-dark font-display text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
       {/* Desktop Sidebar */}
       <Sidebar />
 

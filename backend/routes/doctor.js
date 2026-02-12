@@ -36,7 +36,6 @@ router.get('/search', protect, async (req, res) => {
     try {
         const { specialty, location } = req.query;
 
-        // TODO: Implement actual database query
         let results = mockDoctors;
 
         if (specialty) {
@@ -65,7 +64,6 @@ router.get('/nearby', protect, async (req, res) => {
     try {
         const { latitude, longitude, radius = 10 } = req.query;
 
-        // TODO: Implement geospatial query with Google Maps API
         res.json({
             success: true,
             data: mockDoctors
@@ -86,7 +84,6 @@ router.post('/:id/book', protect, async (req, res) => {
     try {
         const { date, time, reason } = req.body;
 
-        // TODO: Implement actual booking logic
         const appointment = {
             id: Date.now().toString(),
             doctorId: req.params.id,

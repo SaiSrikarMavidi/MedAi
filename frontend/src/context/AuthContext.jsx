@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in
     const token = localStorage.getItem('authToken');
     const storedUser = localStorage.getItem('user');
-    
+
     if (token && storedUser) {
       try {
         setUser(JSON.parse(storedUser));
@@ -34,22 +34,23 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (username, password) => {
+  const login = async (email, password) => {
     try {
-      const response = await authAPI.login(username, password);
-      const { token, user: userData } = response;
-      
+      const response = await authAPI.login(email, password);
+      const { token, id, name, email: userEmail } = response.data;
+      const userData = { id, name, email: userEmail };
+
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
-      
+
       return { success: true, user: userData };
     } catch (error) {
       console.error('Login error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Login failed. Please try again.' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Invalid email or password. Please try again.'
       };
     }
   };
@@ -57,19 +58,20 @@ export const AuthProvider = ({ children }) => {
   const loginWithOTP = async (mobile, otp) => {
     try {
       const response = await authAPI.verifyOTP(mobile, otp);
-      const { token, user: userData } = response;
-      
+      const { token, id, name, email } = response.data;
+      const userData = { id, name, email };
+
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
-      
+
       return { success: true, user: userData };
     } catch (error) {
       console.error('OTP verification error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'OTP verification failed.' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'OTP verification failed.'
       };
     }
   };
@@ -77,19 +79,20 @@ export const AuthProvider = ({ children }) => {
   const loginWithGoogle = async (credential) => {
     try {
       const response = await authAPI.googleAuth(credential);
-      const { token, user: userData } = response;
-      
+      const { token, id, name, email } = response.data;
+      const userData = { id, name, email };
+
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
-      
+
       return { success: true, user: userData };
     } catch (error) {
       console.error('Google auth error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Google authentication failed.' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Google authentication failed.'
       };
     }
   };
@@ -97,19 +100,20 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authAPI.register(userData);
-      const { token, user: newUser } = response;
-      
+      const { token, id, name, email } = response.data;
+      const newUser = { id, name, email };
+
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
-      
+
       return { success: true, user: newUser };
     } catch (error) {
       console.error('Registration error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Registration failed. Please try again.' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Registration failed. Please try again.'
       };
     }
   };

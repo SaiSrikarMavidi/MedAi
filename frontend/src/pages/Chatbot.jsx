@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Bot,
   Lock,
@@ -16,50 +16,10 @@ import {
   CalendarClock,
 } from 'lucide-react';
 import ChatLayout from '../components/ChatLayout';
+import { chatAPI } from '../services/api';
 
-// Mock chat messages
-const INITIAL_MESSAGES = [
-  {
-    id: 1,
-    type: 'user',
-    content: "I've had a persistent headache for 3 days and some dizziness. It seems to get worse when I stand up quickly.",
-    time: '10:24 AM',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHXThz0TzXFctWssJfz6q4dfXJG1wyfsD0WkNvXdFLKVDuLzDKcYs3gd8SHXMuQn3QJoLgL1Dsse7piSSaZizzllTmTyh_QEM43p07imUBaw2pouSY44WB89tnXgPhXwzJOE0uaCU3OBFsCBEGdNNXO4aLgAlh-n4WERA5UmJs_JmfNI3kSWz09h_oizQtP5cnkzBEWmEhhw0Oh16eiXyPtB9aRLQkBUIDiKweaaJ4Wx3Cta7p-iFSYK0uJFwWPeb_ausBmGVPvpY',
-  },
-  {
-    id: 2,
-    type: 'assistant',
-    content: null,
-    richContent: (
-      <>
-        <p className="text-base font-normal leading-relaxed">
-          I understand. Based on your description, I am logging these symptoms. The{' '}
-          <span className="font-bold text-primary">worsening upon standing</span> is a specific detail
-          known as orthostatic hypotension or positional dizziness.
-        </p>
-        <p className="text-base font-normal leading-relaxed mt-3">To help me analyze this further:</p>
-        <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-gray-300">
-          <li>Have you been drinking enough water lately?</li>
-          <li>Do you feel any nausea along with the dizziness?</li>
-        </ul>
-      </>
-    ),
-    time: '10:24 AM',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA94h3IYI8Q6uNTNr6IN9L_pCWz_bAHhfvSVPQxriTMoD3eLnp9OeQrxL3gAUa8QBcgccv4lImUm8UtfbtwsKKufpSaKMkzqMplzUxE_rwtk2kD11mD5WDj-b-8E6Fm7AnIt8cBBhQH31vsJri6dE9uw_OLS1zNINrlzG6bEbGoybuP9qk7B4LDLWGrCCvXyMTlbrNB5M_A4BPaRs5W_W7KPmw4BS1Crvhd5wJ6VRSQvjZP9n_T2_yMGtTox6ZHcWlL5cuulwrkMks',
-  },
-  {
-    id: 3,
-    type: 'system',
-    content: "Symptoms 'Headache' and 'Dizziness' logged to your profile.",
-  },
-  {
-    id: 4,
-    type: 'user',
-    content: "I haven't been drinking much water, no. And slightly nauseous this morning.",
-    time: '10:25 AM',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkv4vcFz8KDsmGpfU3pVy6ZJh5z997ZJYeCKNEIQxq99GBj3o1fNlIG-k7gCaYHsnt4tCkKMkSeFcQSFH-8QlGqPhPxvR6n7CAOLGytqvlwvWz8rFeVwXyv-tNlI-QDRfZiOWM_TZB-tQ_xbBy1-jK1PdQ1f4eWsFWyj2tPzJ26751JuMDcwrsp8menuQUoML5AmxqNfT1ezcYhHjAuhY1T5YJbNpAd_aV7iBm0uFkLKTN4MW2rNIyNNKEyBYyGtRE1g37wKgDIzg',
-  },
-];
+// Start with empty conversation
+const INITIAL_MESSAGES = [];
 
 function ChatHeader() {
   return (
@@ -164,8 +124,22 @@ function TypingIndicator() {
   );
 }
 
-function ChatComposer() {
+function ChatComposer({ onSendMessage }) {
   const [message, setMessage] = useState('');
+
+  const handleSend = () => {
+    if (message.trim()) {
+      onSendMessage(message.trim());
+      setMessage('');
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
   return (
     <footer className="p-6 pt-2 bg-sidebar flex-shrink-0">
@@ -176,6 +150,7 @@ function ChatComposer() {
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="flex-1 bg-transparent border-none text-white placeholder-muted focus:ring-0 resize-none py-4 max-h-32 min-h-[56px] focus:outline-none"
           placeholder="Describe your symptoms or ask a question..."
           rows={1}
@@ -187,7 +162,11 @@ function ChatComposer() {
           <button className="p-2 text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="Upload Image">
             <Image className="w-5 h-5" />
           </button>
-          <button className="ml-2 flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all">
+          <button
+            onClick={handleSend}
+            disabled={!message.trim()}
+            className="ml-2 flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Send className="w-5 h-5" />
           </button>
         </div>
@@ -208,93 +187,15 @@ function HealthInsightsPanel() {
           Health Insights
         </h3>
 
-        {/* Health Status Widget */}
-        <div className="bg-[#1a2027] rounded-xl p-5 border border-sidebar-border mb-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-green-500/20" />
-          <h4 className="text-muted text-xs font-bold uppercase tracking-wider mb-2">Current Status</h4>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-green-500/20 border border-green-500/30 text-green-500">
-              <Activity className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-white text-xl font-bold">Stable</p>
-              <p className="text-green-400 text-xs font-medium">Low Risk Level</p>
-            </div>
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-sidebar-hover flex items-center justify-center mb-4">
+            <Activity className="w-8 h-8 text-muted" />
           </div>
-          <p className="text-sm text-muted leading-normal">
-            Vitals estimated within normal range. Monitor hydration levels closely.
+          <p className="text-white text-sm font-semibold mb-2">No Health Data Yet</p>
+          <p className="text-muted text-xs leading-relaxed max-w-[240px]">
+            Start a conversation with the AI assistant to receive personalized health insights and recommendations.
           </p>
-        </div>
-
-        {/* Detected Symptoms */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-white text-sm font-bold">Detected Symptoms</h4>
-            <span className="text-xs text-primary cursor-pointer hover:underline">View History</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Headache (3 Days)
-            </span>
-            <span className="px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-medium flex items-center gap-1">
-              <RotateCw className="w-3.5 h-3.5" />
-              Dizziness
-            </span>
-            <span className="px-3 py-1.5 rounded-lg bg-sidebar-hover text-muted text-xs font-medium flex items-center gap-1">
-              <Frown className="w-3.5 h-3.5" />
-              Nausea
-            </span>
-          </div>
-        </div>
-
-        {/* Recommended Actions */}
-        <div className="mb-6">
-          <h4 className="text-white text-sm font-bold mb-3">Recommended Actions</h4>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-3 p-3 rounded-lg bg-sidebar-hover/50 border border-sidebar-border hover:border-primary/50 transition-colors cursor-pointer group">
-              <div className="mt-0.5 text-blue-400 bg-blue-400/10 rounded p-1 h-fit">
-                <Droplets className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-white text-sm font-medium group-hover:text-primary transition-colors">
-                  Hydrate Immediately
-                </p>
-                <p className="text-muted text-xs mt-0.5">Drink at least 500ml of water now.</p>
-              </div>
-            </div>
-            <div className="flex gap-3 p-3 rounded-lg bg-sidebar-hover/50 border border-sidebar-border hover:border-primary/50 transition-colors cursor-pointer group">
-              <div className="mt-0.5 text-purple-400 bg-purple-400/10 rounded p-1 h-fit">
-                <CalendarClock className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-white text-sm font-medium group-hover:text-primary transition-colors">
-                  Log Blood Pressure
-                </p>
-                <p className="text-muted text-xs mt-0.5">Check if available to rule out hypotension.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pain Trend Chart */}
-        <div>
-          <h4 className="text-white text-sm font-bold mb-3">Pain Trend</h4>
-          <div className="h-32 w-full rounded-xl bg-sidebar-hover border border-sidebar-border relative overflow-hidden flex items-end justify-between px-2 pb-2 pt-8">
-            <div className="w-1/6 bg-blue-500/20 h-[30%] rounded-t mx-0.5" />
-            <div className="w-1/6 bg-blue-500/30 h-[45%] rounded-t mx-0.5" />
-            <div className="w-1/6 bg-blue-500/40 h-[40%] rounded-t mx-0.5" />
-            <div className="w-1/6 bg-blue-500/60 h-[60%] rounded-t mx-0.5" />
-            <div className="w-1/6 bg-blue-500/80 h-[75%] rounded-t mx-0.5" />
-            <div className="w-1/6 bg-primary h-[85%] rounded-t mx-0.5 relative group">
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-neutral-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                8/10
-              </div>
-            </div>
-            <div className="absolute inset-0 border-t border-white/5 top-1/3 pointer-events-none" />
-            <div className="absolute inset-0 border-t border-white/5 top-2/3 pointer-events-none" />
-          </div>
-          <p className="text-right text-[10px] text-muted mt-1">Last 5 Days</p>
         </div>
       </div>
     </aside>
@@ -302,8 +203,72 @@ function HealthInsightsPanel() {
 }
 
 export default function Chatbot() {
-  const [messages] = useState(INITIAL_MESSAGES);
-  const [isTyping] = useState(true);
+  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  const handleSendMessage = async (content) => {
+    // Get current time
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    // Add user message
+    const userMessage = {
+      id: crypto.randomUUID(),
+      type: 'user',
+      content: content,
+      time: time,
+      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkv4vcFz8KDsmGpfU3pVy6ZJh5z997ZJYeCKNEIQxq99GBj3o1fNlIG-k7gCaYHsnt4tCkKMkSeFcQSFH-8QlGqPhPxvR6n7CAOLGytqvlwvWz8rFeVwXyv-tNlI-QDRfZyOWM_TZB-tQ_xbBy1-jK1PdQ1f4eWsFWyj2tPzJ26751JuMDcwrsp8menuQUoML5AmxqNfT1ezcYhHjAuhY1T5YJbNpAd_aV7iBm0uFkLKTN4MW2rNIyNNKEyBYyGtRE1g37wKgDIzg',
+    };
+
+    // Optimistically update UI
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+
+    // Show typing indicator
+    setIsTyping(true);
+
+    try {
+      // Backend maintains short per-user history; we just send the latest message.
+      const response = await chatAPI.sendSimpleMessage(content);
+      console.log('Full Backend Response:', response);
+
+      const aiMessage = {
+        id: crypto.randomUUID(),
+        type: 'assistant',
+        content: response?.reply ?? "No response received from AI.",
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA94h3IYI8Q6uNTNr6IN9L_pCWz_bAHhfvSVPQxriTMoD3eLnp9OeQrxL3gAUa8QBcgccv4lImUm8UtfbtwsKKufpSaKMkzqMplzUxE_rwtk2kD11mD5WDj-b-8E6Fm7AnIt8cBBhQH31vsJri6dE9uw_OLS1zNINrlzG6bEbGoybuP9qk7B4LDLWGrCCvXyMTlbrNB5M_A4BPaRs5W_W7KPmw4BS1Crvhd5wJ6VRSQvjZP9n_T2_yMGtTox6ZHcWlL5cuulwrkMks',
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+
+      // Fallback message on error
+      const errorMessage = {
+        id: crypto.randomUUID(),
+        type: 'assistant', // Use assistant type to show bubble
+        content: "AI service is temporarily unavailable. Please try again.",
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA94h3IYI8Q6uNTNr6IN9L_pCWz_bAHhfvSVPQxriTMoD3eLnp9OeQrxL3gAUa8QBcgccv4lImUm8UtfbtwsKKufpSaKMkzqMplzUxE_rwtk2kD11mD5WDj-b-8E6Fm7AnIt8cBBhQH31vsJri6dE9uw_OLS1zNINrlzG6bEbGoybuP9qk7B4LDLWGrCCvXyMTlbrNB5M_A4BPaRs5W_W7KPmw4BS1Crvhd5wJ6VRSQvjZP9n_T2_yMGtTox6ZHcWlL5cuulwrkMks',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      // Also log the full response for debugging as requested
+      // Since response is local to try block, we can't log it here easily without refactoring
+      // But we can rely on network tab or valid response logging
+      setIsTyping(false);
+    }
+  };
 
   return (
     <ChatLayout>
@@ -314,26 +279,43 @@ export default function Chatbot() {
 
           {/* Chat History */}
           <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-            {/* Date Separator */}
-            <div className="flex justify-center">
-              <span className="px-3 py-1 rounded-full bg-sidebar-hover text-muted text-xs font-medium">
-                Today, 10:23 AM
-              </span>
-            </div>
+            {messages.length === 0 && !isTyping ? (
+              /* Empty State */
+              <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Bot className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-white text-xl font-bold mb-2">Welcome to MediAI</h3>
+                <p className="text-muted text-sm max-w-md leading-relaxed">
+                  Your AI health assistant is ready to help. Describe your symptoms or ask health-related questions to get started.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Date Separator - Only show when there are messages */}
+                {messages.length > 0 && (
+                  <div className="flex justify-center">
+                    <span className="px-3 py-1 rounded-full bg-sidebar-hover text-muted text-xs font-medium">
+                      Today, {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )}
 
-            {/* Messages */}
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
-            ))}
+                {/* Messages */}
+                {messages.map((msg) => (
+                  <MessageBubble key={msg.id} message={msg} />
+                ))}
 
-            {/* Typing Indicator */}
-            {isTyping && <TypingIndicator />}
+                {/* Typing Indicator */}
+                {isTyping && <TypingIndicator />}
+              </>
+            )}
 
-            {/* Bottom spacer */}
-            <div className="h-4 w-full" />
+            {/* Bottom spacer and scroll anchor */}
+            <div ref={messagesEndRef} className="h-4 w-full" />
           </div>
 
-          <ChatComposer />
+          <ChatComposer onSendMessage={handleSendMessage} />
         </div>
 
         {/* Right Sidebar */}

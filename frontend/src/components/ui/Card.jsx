@@ -8,8 +8,8 @@ const Card = ({
     onClick,
     ...props
 }) => {
-    const baseClasses = 'bg-white border border-neutral-200 rounded-lg shadow-sm';
-    const hoverClasses = hover ? 'cursor-pointer transition-all duration-200 hover:shadow-md hover:border-neutral-300' : '';
+    const baseClasses = 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm';
+    const hoverClasses = hover ? 'cursor-pointer transition-all duration-200 hover:shadow-md hover:border-gray-400 dark:hover:border-gray-500' : '';
 
     const cardClasses = `${baseClasses} ${hoverClasses} ${className}`;
 
@@ -36,7 +36,7 @@ const Card = ({
 };
 
 export const CardHeader = ({ children, className = '' }) => (
-    <div className={`px-6 py-4 border-b border-neutral-200 ${className}`}>
+    <div className={`px-6 py-4 border-b border-gray-300 dark:border-gray-600 ${className}`}>
         {children}
     </div>
 );

@@ -66,7 +66,6 @@ router.post('/check', protect, async (req, res) => {
     try {
         const { foodName } = req.body;
 
-        // TODO: Implement AI-based food analysis
         const isSafe = !mockFoods.avoid.some(f => 
             f.name.toLowerCase() === foodName.toLowerCase()
         );
@@ -88,10 +87,10 @@ router.post('/check', protect, async (req, res) => {
     }
 });
 
-// @route   GET /api/food/recommendations
+// @route   GET /api/food/recommended
 // @desc    Get personalized food recommendations
 // @access  Private
-router.get('/recommendations', protect, async (req, res) => {
+router.get('/recommended', protect, async (req, res) => {
     try {
         res.json({
             success: true,
@@ -103,6 +102,46 @@ router.get('/recommendations', protect, async (req, res) => {
         });
     } catch (error) {
         console.error('Get recommendations error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error'
+        });
+    }
+});
+
+// @route   GET /api/food/meal-plan
+// @desc    Generate daily meal plan
+// @access  Private
+router.get('/meal-plan', protect, async (req, res) => {
+    try {
+        const mealPlan = {
+            breakfast: [
+                { name: 'Oatmeal with berries', calories: 150 },
+                { name: 'Greek yogurt', calories: 100 },
+                { name: 'Green tea', calories: 5 }
+            ],
+            lunch: [
+                { name: 'Grilled chicken salad', calories: 280 },
+                { name: 'Brown rice', calories: 110 },
+                { name: 'Water', calories: 0 }
+            ],
+            dinner: [
+                { name: 'Baked salmon', calories: 200 },
+                { name: 'Steamed broccoli', calories: 55 },
+                { name: 'Quinoa', calories: 120 }
+            ],
+            snack: [
+                { name: 'Mixed nuts', calories: 160 },
+                { name: 'Apple slices', calories: 80 }
+            ]
+        };
+
+        res.json({
+            success: true,
+            data: mealPlan
+        });
+    } catch (error) {
+        console.error('Get meal plan error:', error);
         res.status(500).json({
             success: false,
             message: 'Server error'

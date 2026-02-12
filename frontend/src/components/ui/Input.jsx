@@ -13,11 +13,11 @@ const Input = forwardRef(({
     ...props
 }, ref) => {
     const inputClasses = `
-    w-full px-4 py-2.5 bg-white border rounded-lg
-    text-neutral-900 placeholder:text-neutral-400
+    w-full px-4 py-2.5 bg-white dark:bg-gray-800 border rounded-lg
+    text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500
     focus:outline-none focus:ring-2 focus:border-transparent
     transition-all duration-200
-    ${error ? 'border-error focus:ring-error' : 'border-neutral-300 focus:ring-primary-500'}
+    ${error ? 'border-error focus:ring-error' : 'border-gray-400 dark:border-gray-500 focus:ring-primary-500'}
     ${icon ? (iconPosition === 'left' ? 'pl-11' : 'pr-11') : ''}
     ${className}
   `;
@@ -25,7 +25,7 @@ const Input = forwardRef(({
     return (
         <div className={`w-full ${containerClassName}`}>
             {label && (
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     {label}
                 </label>
             )}

@@ -27,7 +27,7 @@ export default function AuthLayout({ children }) {
         <div className="relative z-20 flex flex-col gap-6 max-w-lg">
           {/* Logo */}
           <div className="flex items-center gap-2 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-white">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white">
               <Cross className="w-6 h-6" />
             </div>
             <span className="text-2xl font-bold tracking-tight text-white">MediAI</span>

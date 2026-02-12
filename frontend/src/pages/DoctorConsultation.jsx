@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Stethoscope,
   ArrowRight,
@@ -9,8 +10,57 @@ import {
   MapPin,
   Navigation,
   Info,
+  X,
+  Clock,
+  Calendar,
+  Phone,
+  ChevronDown
 } from 'lucide-react';
 import ChatLayout from '../components/ChatLayout';
+
+// Dynamic clinic data
+const NEARBY_CLINICS = [
+  {
+    id: 1,
+    name: 'City Care Clinic',
+    doctor: 'Dr. Sarah Smith',
+    hours: 'Open until 8PM',
+    distance: '0.8 mi',
+    address: '123 Main St, Downtown',
+    phone: '+1 (555) 123-4567',
+    specialty: 'General Practice'
+  },
+  {
+    id: 2,
+    name: 'MediCenter Plus',
+    doctor: 'Dr. Michael Chen',
+    hours: 'Open until 10PM',
+    distance: '1.2 mi',
+    address: '456 Oak Ave, Midtown',
+    phone: '+1 (555) 987-6543',
+    specialty: 'Family Medicine'
+  },
+  {
+    id: 3,
+    name: 'HealthPoint Clinic',
+    doctor: 'Dr. Emily Johnson',
+    hours: 'Open 24/7',
+    distance: '1.5 mi',
+    address: '789 Pine Rd, Uptown',
+    phone: '+1 (555) 456-7890',
+    specialty: 'Urgent Care'
+  },
+  {
+    id: 4,
+    name: 'Wellness Medical Group',
+    doctor: 'Dr. David Rodriguez',
+    hours: 'Open until 6PM',
+    distance: '2.1 mi',
+    address: '321 Elm St, Westside',
+    phone: '+1 (555) 234-5678',
+    specialty: 'Internal Medicine'
+  }
+];
 
 function EmergencyBanner() {
   return (
@@ -59,7 +109,7 @@ function AIAssessmentCard() {
   );
 }
 
-function SelfCareCard() {
+function SelfCareCard({ onViewGuide }) {
   const items = [
     'Rest and hydration (8-10 glasses/day)',
     'Monitor temperature every 4 hours',
@@ -87,7 +137,9 @@ function SelfCareCard() {
             ))}
           </ul>
         </div>
-        <button className="w-full py-2.5 rounded-lg border border-gray-600 text-white font-bold text-sm hover:bg-sidebar-hover transition-colors">
+        <button 
+          onClick={onViewGuide}
+          className="w-full py-2.5 rounded-lg border border-gray-600 text-white font-bold text-sm hover:bg-sidebar-hover transition-colors">
           View Detailed Guide
         </button>
       </div>
@@ -95,7 +147,7 @@ function SelfCareCard() {
   );
 }
 
-function OnlineConsultationCard() {
+function OnlineConsultationCard({ onBookCall }) {
   return (
     <div className="relative flex flex-col rounded-xl border-2 border-primary bg-surface-dark overflow-hidden shadow-[0_0_20px_rgba(19,127,236,0.15)] h-full scale-100 lg:scale-105 z-10">
       <div className="absolute top-0 right-0 bg-primary text-white text-xs font-bold px-3 py-1 rounded-bl-lg z-20">
@@ -127,7 +179,9 @@ function OnlineConsultationCard() {
           </div>
         </div>
         <div className="flex flex-col gap-3">
-          <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-white text-sm font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-colors">
+          <button 
+            onClick={onBookCall}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-white text-sm font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-colors">
             Book Video Call
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -140,7 +194,15 @@ function OnlineConsultationCard() {
   );
 }
 
-function PhysicalVisitCard() {
+function PhysicalVisitCard({ onGetDirections }) {
+  const [selectedClinic, setSelectedClinic] = useState(NEARBY_CLINICS[0]);
+  const [showClinicList, setShowClinicList] = useState(false);
+
+  const handleClinicSelect = (clinic) => {
+    setSelectedClinic(clinic);
+    setShowClinicList(false);
+  };
+
   return (
     <div className="flex flex-col rounded-xl border border-sidebar-border bg-surface-dark overflow-hidden shadow-sm hover:shadow-md transition-shadow h-full">
       <div className="relative h-32 w-full bg-gray-800">
@@ -162,15 +224,57 @@ function PhysicalVisitCard() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-white text-lg font-bold">Physical Visit</h3>
-            <span className="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-1 rounded">0.8 mi</span>
+            <span className="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-1 rounded">{selectedClinic.distance}</span>
           </div>
           <p className="text-muted text-sm">If symptoms worsen or persist.</p>
-          <div className="mt-4 p-3 rounded-lg bg-sidebar-hover border border-sidebar-border">
-            <p className="text-white text-sm font-bold">City Care Clinic</p>
-            <p className="text-gray-400 text-xs mt-1">Dr. Sarah Smith • Open until 8PM</p>
+          
+          {/* Clinic Selector */}
+          <div className="mt-4 relative">
+            <button 
+              onClick={() => setShowClinicList(!showClinicList)}
+              className="w-full p-3 rounded-lg bg-sidebar-hover border border-sidebar-border hover:border-primary transition-colors text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white text-sm font-bold">{selectedClinic.name}</p>
+                  <p className="text-gray-400 text-xs mt-1">{selectedClinic.doctor} • {selectedClinic.hours}</p>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                  showClinicList ? 'rotate-180' : ''
+                }`} />
+              </div>
+            </button>
+            
+            {/* Clinic Dropdown */}
+            {showClinicList && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card-dark border border-sidebar-border rounded-lg shadow-xl z-20 max-h-64 overflow-y-auto">
+                {NEARBY_CLINICS.map((clinic) => (
+                  <button
+                    key={clinic.id}
+                    onClick={() => handleClinicSelect(clinic)}
+                    className={`w-full p-3 text-left hover:bg-sidebar-hover transition-colors border-b border-sidebar-border last:border-b-0 ${
+                      selectedClinic.id === clinic.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-white text-sm font-bold">{clinic.name}</p>
+                          <span className="text-xs text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">{clinic.distance}</span>
+                        </div>
+                        <p className="text-gray-400 text-xs">{clinic.doctor} • {clinic.hours}</p>
+                        <p className="text-gray-500 text-xs mt-1">{clinic.specialty} • {clinic.address}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <button className="w-full py-2.5 rounded-lg border border-gray-600 text-white font-bold text-sm hover:bg-sidebar-hover transition-colors flex items-center justify-center gap-2">
+        <button 
+          onClick={() => onGetDirections(selectedClinic)}
+          className="w-full py-2.5 rounded-lg border border-gray-600 text-white font-bold text-sm hover:bg-sidebar-hover transition-colors flex items-center justify-center gap-2">
           <Navigation className="w-4 h-4" />
           Get Directions
         </button>
@@ -194,7 +298,153 @@ function Disclaimer() {
   );
 }
 
+function SelfCareModal({ isOpen, onClose }) {
+  if (!isOpen) return null;
+
+  const detailedSteps = [
+    {
+      title: 'Hydration',
+      steps: [
+        'Drink 8-10 glasses of water daily',
+        'Include warm fluids like herbal tea or soup',
+        'Avoid alcohol and caffeine which can dehydrate',
+      ],
+    },
+    {
+      title: 'Rest & Recovery',
+      steps: [
+        'Get at least 8 hours of sleep',
+        'Take short breaks throughout the day',
+        'Avoid strenuous activities',
+      ],
+    },
+    {
+      title: 'Symptom Management',
+      steps: [
+        'Monitor temperature every 4 hours',
+        'Gargle with salt water 3-4 times daily',
+        'Use a humidifier to ease breathing',
+      ],
+    },
+    {
+      title: 'When to Seek Help',
+      steps: [
+        'Fever above 102°F (39°C)',
+        'Symptoms lasting more than 7 days',
+        'Difficulty breathing or chest pain',
+      ],
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-surface-dark rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-sidebar-border">
+        <div className="sticky top-0 bg-sidebar-hover p-6 border-b border-sidebar-border flex items-center justify-between">
+          <h2 className="text-white text-2xl font-bold">Self-Care Guide</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="p-6 space-y-6">
+          {detailedSteps.map((section, i) => (
+            <div key={i}>
+              <h3 className="text-white text-lg font-bold mb-3">{section.title}</h3>
+              <ul className="space-y-2">
+                {section.steps.map((step, j) => (
+                  <li key={j} className="flex items-start gap-3 text-gray-300 text-sm">
+                    <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="sticky bottom-0 bg-sidebar-hover p-6 border-t border-sidebar-border">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-lg bg-primary text-white font-bold hover:bg-blue-600 transition-colors"
+          >
+            Got it!
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookCallModal({ isOpen, onClose }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-surface-dark rounded-xl max-w-md w-full border border-primary shadow-[0_0_30px_rgba(19,127,236,0.3)]">
+        <div className="bg-sidebar-hover p-6 border-b border-sidebar-border flex items-center justify-between">
+          <h2 className="text-white text-2xl font-bold">Book Video Call</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+            <div className="flex items-center gap-2 text-green-400 font-semibold mb-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              Doctors Available Now
+            </div>
+            <p className="text-gray-300 text-sm">Average wait time: 8 minutes</p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-gray-300">
+              <Video className="w-5 h-5 text-primary" />
+              <span className="text-sm">Video consultation (recommended)</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-300">
+              <Phone className="w-5 h-5 text-primary" />
+              <span className="text-sm">Audio call option available</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-300">
+              <Clock className="w-5 h-5 text-primary" />
+              <span className="text-sm">15-20 minute consultation</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-800">
+            <p className="text-xs text-gray-400">
+              <strong className="text-white">Note:</strong> Have your health profile and symptoms ready. The doctor
+              may request additional information or tests during the consultation.
+            </p>
+          </div>
+        </div>
+        <div className="p-6 border-t border-sidebar-border space-y-3">
+          <button className="w-full py-3 rounded-lg bg-primary text-white font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+            <Video className="w-5 h-5" />
+            Start Video Call Now
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-2 text-gray-400 hover:text-white transition-colors text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DoctorConsultation() {
+  const [showSelfCareModal, setShowSelfCareModal] = useState(false);
+  const [showBookCallModal, setShowBookCallModal] = useState(false);
+
+  const handleGetDirections = (clinic) => {
+    const destination = `${clinic.name}, ${clinic.address}`;
+    const encodedDestination = encodeURIComponent(destination);
+    
+    // Open Google Maps with directions
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodedDestination}`, '_blank');
+  };
+
   return (
     <ChatLayout>
       <div className="flex-1 overflow-y-auto">
@@ -220,9 +470,9 @@ export default function DoctorConsultation() {
           <div>
             <h2 className="text-white tracking-tight text-2xl font-bold leading-tight mb-6">Recommended Paths</h2>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              <SelfCareCard />
-              <OnlineConsultationCard />
-              <PhysicalVisitCard />
+              <SelfCareCard onViewGuide={() => setShowSelfCareModal(true)} />
+              <OnlineConsultationCard onBookCall={() => setShowBookCallModal(true)} />
+              <PhysicalVisitCard onGetDirections={handleGetDirections} />
             </div>
           </div>
 
@@ -230,6 +480,10 @@ export default function DoctorConsultation() {
           <Disclaimer />
         </div>
       </div>
+
+      {/* Modals */}
+      <SelfCareModal isOpen={showSelfCareModal} onClose={() => setShowSelfCareModal(false)} />
+      <BookCallModal isOpen={showBookCallModal} onClose={() => setShowBookCallModal(false)} />
     </ChatLayout>
   );
 }

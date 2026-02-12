@@ -19,7 +19,8 @@ const generateToken = (id) => {
 router.post('/register', [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('phone').optional().trim()
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -27,7 +28,7 @@ router.post('/register', [
             return res.status(400).json({ success: false, errors: errors.array() });
         }
 
-        const { name, email, password } = req.body;
+        const { name, email, password, phone } = req.body;
 
         // Check if user already exists
         const userExists = await User.findOne({ email });
@@ -38,11 +39,23 @@ router.post('/register', [
             });
         }
 
+        // Check if phone number already exists
+        if (phone) {
+            const phoneExists = await User.findOne({ phone });
+            if (phoneExists) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'User already exists with this phone number'
+                });
+            }
+        }
+
         // Create user
         const user = await User.create({
             name,
             email,
-            password
+            password,
+            ...(phone && { phone })
         });
 
         if (user) {
@@ -69,23 +82,27 @@ router.post('/register', [
 // @desc    Login user
 // @access  Public
 router.post('/login', [
-    body('email').isEmail().withMessage('Valid email is required'),
+    body('email').trim().notEmpty().withMessage('Email is required').isEmail().withMessage('Please provide a valid email address'),
     body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ success: false, errors: errors.array() });
+            return res.status(400).json({ 
+                success: false, 
+                message: errors.array()[0].msg,
+                errors: errors.array() 
+            });
         }
 
         const { email, password } = req.body;
 
         // Check user exists
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid credentials'
+                message: 'Invalid email or password'
             });
         }
 
@@ -94,7 +111,7 @@ router.post('/login', [
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid credentials'
+                message: 'Invalid email or password'
             });
         }
 
@@ -121,13 +138,28 @@ router.post('/login', [
 // @access  Public
 router.post('/request-otp', async (req, res) => {
     try {
-        const { email } = req.body;
+        const { mobile, email } = req.body;
+        const identifier = mobile || email;
 
-        const user = await User.findOne({ email });
+        if (!identifier) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mobile number or email is required'
+            });
+        }
+
+        // Find user by phone or email
+        const user = await User.findOne({
+            $or: [
+                { phone: identifier },
+                { email: identifier }
+            ]
+        });
+        
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: 'User not found'
+                message: 'User not found with this mobile number or email'
             });
         }
 
@@ -140,9 +172,6 @@ router.post('/request-otp', async (req, res) => {
             expiresAt
         };
         await user.save();
-
-        // TODO: Send OTP via email/SMS
-        console.log(`OTP for ${email}: ${otpCode}`);
 
         res.json({
             success: true,
@@ -164,13 +193,28 @@ router.post('/request-otp', async (req, res) => {
 // @access  Public
 router.post('/verify-otp', async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { mobile, email, otp } = req.body;
+        const identifier = mobile || email;
 
-        const user = await User.findOne({ email });
+        if (!identifier || !otp) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mobile number/email and OTP are required'
+            });
+        }
+
+        // Find user by phone or email
+        const user = await User.findOne({
+            $or: [
+                { phone: identifier },
+                { email: identifier }
+            ]
+        });
+        
         if (!user || !user.otp) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid OTP'
+                message: 'Invalid OTP or user not found'
             });
         }
 
@@ -178,7 +222,7 @@ router.post('/verify-otp', async (req, res) => {
         if (user.otp.expiresAt < new Date()) {
             return res.status(400).json({
                 success: false,
-                message: 'OTP expired'
+                message: 'OTP expired. Please request a new one'
             });
         }
 
@@ -186,7 +230,7 @@ router.post('/verify-otp', async (req, res) => {
         if (user.otp.code !== otp) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid OTP'
+                message: 'Invalid OTP code'
             });
         }
 
@@ -209,6 +253,83 @@ router.post('/verify-otp', async (req, res) => {
             success: false,
             message: 'Server error'
         });
+    }
+});
+
+// @route   GET /api/auth/google
+// @desc    Redirect to Google OAuth
+// @access  Public
+router.get('/google', (req, res) => {
+    const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${process.env.GOOGLE_CLIENT_ID}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&response_type=code` +
+        `&scope=openid%20email%20profile` +
+        `&access_type=offline`;
+    
+    res.redirect(googleAuthUrl);
+});
+
+// @route   GET /api/auth/google/callback
+// @desc    Handle Google OAuth callback
+// @access  Public
+router.get('/google/callback', async (req, res) => {
+    const { code } = req.query;
+    
+    if (!code) {
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=no_code`);
+    }
+    
+    try {
+        // Exchange code for tokens
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                code,
+                client_id: process.env.GOOGLE_CLIENT_ID,
+                client_secret: process.env.GOOGLE_CLIENT_SECRET,
+                redirect_uri: `${req.protocol}://${req.get('host')}/api/auth/google/callback`,
+                grant_type: 'authorization_code'
+            })
+        });
+        
+        const tokens = await tokenResponse.json();
+        
+        if (!tokens.access_token) {
+            throw new Error('No access token received');
+        }
+        
+        // Get user info from Google
+        const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${tokens.access_token}` }
+        });
+        
+        const googleUser = await userResponse.json();
+        
+        // Check if user exists
+        let user = await User.findOne({ email: googleUser.email });
+        
+        if (!user) {
+            // Create new user
+            user = await User.create({
+                name: googleUser.name,
+                email: googleUser.email,
+                googleId: googleUser.id,
+                password: Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8)
+            });
+        }
+        
+        // Generate JWT token
+        const token = generateToken(user._id);
+        
+        // Redirect to frontend with token
+        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/success?token=${token}&user=${encodeURIComponent(JSON.stringify({ id: user._id, name: user.name, email: user.email }))}`);
+        
+    } catch (error) {
+        console.error('Google OAuth callback error:', error);
+        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=oauth_failed`);
     }
 });
 
